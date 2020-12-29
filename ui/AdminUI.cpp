@@ -37,13 +37,11 @@ string getCardNum() {
     string num;
     cout<<"Please insert your card or manually enter your card number: ";
     cin>>num;
-    auto accounts = c.getCustomerAccounts(num);
-    while(accounts.size()==0) {
+    while(!c.customerExists(num)) {
         cout<<"Account not found, please try again: ";
         cin.clear();
         cin.ignore(256,'\n');
         cin >> num;
-        accounts = c.getCustomerAccounts(num);
     }
     return num;
 }

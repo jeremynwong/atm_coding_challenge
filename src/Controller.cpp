@@ -106,6 +106,10 @@ std::unordered_map<std::string, std::string> Controller::getAccountFields() {
 	return m;
 }
 
+bool Controller::customerExists(std::string custId) {
+	return keyExists("customer:"+custId+":info");
+}
+
 std::vector<std::string> Controller::getCustomerAccounts(std::string custId) {
 	std::vector<std::string> accounts;
 	if (!keyExists("customer:"+custId+":accounts"))
