@@ -61,3 +61,14 @@ target_link_libraries(atm ${REDIS_PLUS_PLUS_LIB})
 
 ##### UI Executables
 add_subdirectory(ui)
+
+################################################################################
+### Unit Tests
+################################################################################
+# Add 'Catch' test directory
+# Turn tests on and off using the CMake GUI
+set(TESTS_ON true CACHE BOOL "Configure unit testing (uses Catch unit tests)")
+if(TESTS_ON)
+    enable_testing(true)
+    add_subdirectory(tests)
+endif(TESTS_ON)
