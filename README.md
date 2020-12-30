@@ -42,7 +42,7 @@ $ make
 ```
 
 ## How to Use
-A Redis server must first be started. In the UI executables and unit tests, we assume that the server is started at it's default location on the host computer. If you wish to use another server, these settings can be passed as parameters when constructing the Controller object.
+A Redis server must first be started. In the UI executables and unit tests, we assume that the server is started using the default settings on the host computer. If you wish to use another server, these settings can be passed as parameters when constructing the Controller object.
 ```
 $ redis-server
 ```
