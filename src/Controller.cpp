@@ -2,16 +2,27 @@
 #include <iostream>
 
 Controller::Controller() {
-	redis = new Redis("tcp://127.0.0.1:6379"); // default local redis server
-	setup();
+	try {
+		redis = new Redis("tcp://127.0.0.1:6379"); // default local redis server
+		setup();
+	} catch(sw::redis::IoError& e) {
+		std::cout<<"Could not connect to redis server."<<std::endl;
+		throw;
+	}
 }
 
-Controller::Controller(std::string ip, int port) {
-	redis = new Redis("tcp://"+ip+":"+std::to_string(port));
-	setup();
+Controller::Controller(std::string ip, int port, int databaseNum=0) {
+	try {
+		redis = new Redis("tcp://"+ip+":"+std::to_string(port)+"/"+std::to_string(databaseNum));
+		setup();
+	} catch(sw::redis::IoError& e) {
+		std::cout<<"Could not connect to redis server."<<std::endl;
+		throw;
+	}
 }
 
 void Controller::setup() {
+	srand((unsigned) time(0));
 	if(!keyExists("custFields")) {
 		// these are the fields that are required for each customer along with a hint and the format
 		// more can be added as desired such as address, date of birth, etc.
@@ -52,7 +63,6 @@ std::string Controller::genNewCustId() {
 	int min=100000000;
 	int max=999999999;
 	std::string id;
-	srand((unsigned) time(0));
 	do {
 		id=std::to_string(rand()%(max-min + 1) + min);
 	} while (keyExists("customer:"+id+":info"));
@@ -63,22 +73,22 @@ std::string Controller::genNewAccountId(std::string custId) {
 	int min=100;
 	int max=999;
 	std::string id;
-	srand((unsigned) time(0));
 	do {
 		id=std::to_string(rand()%(max-min + 1) + min);
 	} while (keyExists("customer:"+custId+":"+id));
 	return id;
 }
 
-void Controller::addCustomer(std::unordered_map<std::string, std::string> custInfo) {
+std::string Controller::addCustomer(std::unordered_map<std::string, std::string> custInfo) {
 	std::string custId=genNewCustId();
 	redis->hmset("customer:"+custId+":info", custInfo.begin(), custInfo.end());
 	redis->rpush("customerList", {custId});
 	std::cout<<"New Customer Card Number: "<<custId<<std::endl;
 	addAccount(custId);
+	return custId;
 }
 
-void Controller::addAccount(std::string custId) {
+std::string Controller::addAccount(std::string custId) {
 	std::string accountId=genNewAccountId(custId);
 	redis->rpush("customer:"+custId+":accounts", {accountId});
 
@@ -86,6 +96,7 @@ void Controller::addAccount(std::string custId) {
 	redis->hgetall("accountFields", std::inserter(m, m.begin()));
 	redis->hmset("account:"+custId+":"+accountId, m.begin(), m.end());
 	std::cout<<"New Account ID: "<<accountId<<std::endl;
+	return accountId;
 }
 
 std::vector<std::string> Controller::getCustomerFields(std::unordered_map<std::string, std::unordered_map<std::string, std::string>>& custFieldsInfo) {
@@ -140,8 +151,10 @@ int Controller::getBalance(std::string custId, std::string account) {
 	return std::stoi(*bal);
 }
 
-void Controller::deposit(std::string custId, std::string account, int amount) {
+bool Controller::deposit(std::string custId, std::string account, int amount) {
+	if (amount<0) return false;
 	redis->hincrby("account:"+custId+":"+account,"Balance",(long long)amount);
+	return true;
 }
 
 bool Controller::withdraw(std::string custId, std::string account, int amount) {
